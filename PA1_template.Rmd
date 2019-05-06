@@ -1,13 +1,15 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
-output: 
+output:
   html_document:
     keep_md: true
+author: "Kristine Pagaduan"
 ---
 
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 
 ## Loading and preprocessing the data
-knitr::opts_chunk$set(warning=FALSE)
 library(ggplot2)
 library(RColorBrewer)
 
