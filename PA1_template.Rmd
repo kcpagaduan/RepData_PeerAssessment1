@@ -1,0 +1,111 @@
+---
+title: "RepData_PeerAssessment1"
+author: "Kristine Pagaduan"
+date: "May 9, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Data Pre-Processing
+```{r}
+if(!dir.exists("data")){dir.create("data")}
+setwd("./data")
+fileURL<-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(fileURL,destfile = "ActivityMonitoring.zip")
+unzip("ActivityMonitoring.zip")
+library(dplyr)
+library(ggplot2)
+activity<-read.csv("activity.csv")
+```
+
+## Data Processing
+
+### 1. What is mean total number of steps taken per day?
+
+```{r}
+total_steps_per_day <- with(activity,aggregate(steps,list(date),sum,na.rm=TRUE))
+mean_total_steps <- mean(total_steps_per_day$x)
+mean_total_steps  #There are 9354 total steps taken on average per day
+```
+Figure
+```{r}
+png("plot1.png", width = 480, height = 480)
+hist(total_steps_per_day$x,xlab="Total Steps per Day",main="Total Steps per Day",
+     col = c("#9A872D", "#F5CDB6", "#F7B0AA", "#FDDDA4","#76A08A"))
+dev.off()
+```
+
+## 2. What is the average daily activity pattern?
+
+```{r}
+mean_steps_per_interval <- with(activity,aggregate(steps,list(interval),mean,na.rm=TRUE))
+```
+Figure
+```{r}
+png("plot2.png", width = 480, height = 480)
+with(mean_steps_per_interval,
+     plot(Group.1,x,type = "l",xlab="Interval", ylab="Average Number of Steps"))
+dev.off()
+```
+Finding the interval with most number of total steps
+```{r}
+max_index<-which.max(mean_steps_per_interval$x)
+max_interval<-mean_steps_per_interval[max_index,1]
+max_interval #Interval 835 has the most average number of steps accross all days
+```
+
+## 3. Imputing missing values
+
+Fill in all of the missing values in the dataset by substituting missing (NA) values with the total mean steps per interval.
+```{r}
+new_activity <- data.frame(activity)
+head(new_activity)
+na <- which(is.na(activity$steps))
+length <- length(na)
+na_value <- mean(mean_steps_per_interval$x,na.rm=TRUE)
+for(i in length){
+  new_activity[na,1]<-na_value
+}
+head(new_activity)
+```
+Figure
+```{r}
+png("plot3.png", width = 480, height = 480)
+hist(new_activity$steps,xlab="Total Steps per Day",main="Histogram")
+dev.off()
+```
+The mean and median total number of steps taken per day. 
+```{r}
+new_total_steps_per_day<-with(new_activity,aggregate(steps,list(date),sum,na.rm=TRUE))
+new_mean_total_steps<-mean(new_total_steps_per_day$x)
+new_mean_total_steps
+mean_total_steps
+new_median_total_steps<-median(new_total_steps_per_day$x)
+new_median_total_steps
+median_total_steps <- median(total_steps_per_day$x)
+median_total_steps
+```
+
+## 4. Are there differences in activity patterns between weekdays and weekends?
+```{r}
+weekend<-c("Saturday","Sunday")
+activity$weekday<- factor(weekdays(as.Date(activity$date,format="%Y-%m-%d")) %in% weekend,
+                          levels=c(TRUE, FALSE), labels=c('Weekend', 'Weekday'))
+```
+Figure
+```{r}
+png("plot4.png", width = 480, height = 480)
+ggplot(data=activity,aes(x=interval,y=steps))+
+  stat_summary(fun.y=mean,geom="line")+facet_grid(weekday~.)
+dev.off()
+```
+The number of steps taken per interval fluctuates more during weekdays than on weekends.
